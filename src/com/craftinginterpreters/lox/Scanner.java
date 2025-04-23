@@ -4,7 +4,9 @@ package com.craftinginterpreters.lox;
 import static com.craftinginterpreters.lox.TokenType.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Scanner -- The Scanner for the Lox language, parses a string into Lox tokens
@@ -16,6 +18,33 @@ public class Scanner {
 	private int start = 0; // First char of lexeme
 	private int current = 0; // Current char of lexeme
 	private int line = 1; // Which line we are currently on
+	
+	private static final Map<String, TokenType> keywords;
+	
+	// Map of reserved word strings to token types
+	static {
+		keywords = new HashMap<String, TokenType>();
+		
+		keywords.put("and", AND);
+		keywords.put("class", CLASS);
+		keywords.put("else", ELSE);
+		keywords.put("false", FALSE);
+		
+		keywords.put("for", FOR);
+		keywords.put("fun", FUN);
+		keywords.put("if", IF);
+		keywords.put("NIL", NIL);
+		
+		keywords.put("or", OR);
+		keywords.put("print", PRINT);
+		keywords.put("return", RETURN);
+		keywords.put("super", SUPER);
+		
+		keywords.put("this", THIS);
+		keywords.put("true", TRUE);
+		keywords.put("var", VAR);
+		keywords.put("while", WHILE);
+	}
 	
 	public Scanner(String src) {
 		this.source = src;
@@ -30,6 +59,7 @@ public class Scanner {
 		}
 		
 		tokens.add(new Token(EOF, "", null, line));
+		return tokens;
 	}
 	
 	/**
@@ -94,13 +124,22 @@ public class Scanner {
 		case('"'): String(); break;
 		
 		
-		// Reserved words and identifiers
-		
+		// Reserved words "OR"
+		case('o'):
+			if(match('r')) {
+				addToken(OR);
+				
+			}
+			break;
+			
 		default:
 			// Number literals
 			if(isDigit(c)) {
 				number();
-			} else {
+			} else if(isAlpha(c)){
+				identifier();
+			}
+			else {
 				Lox.error(line, "Unexpected character");
 			}
 		}
@@ -208,8 +247,47 @@ public class Scanner {
 		addToken(NUMBER, Double.parseDouble(source.substring(start, current)));
 	}
 	
+	/**
+	 * Peeks beyond the next char, 2 spaces over
+	 * @return the character beyond the next character
+	 */
 	private char peekNext() {
 		if(current + 1 >= source.length()) return '\0';
 		return source.charAt(current + 1);
+	}
+	
+	/**
+	 * Go all the way to the end of the word to determine identifier, then create token of corresponding type
+	 */
+	private void identifier() {
+		while(isAlphaNumeric(peek())) advance();
+		
+		String text = source.substring(start, current);
+		TokenType type = keywords.get(text);
+		
+		if(type == null) type = IDENTIFIER;
+		addToken(type);
+		
+		addToken(IDENTIFIER);
+	}
+	
+	/**
+	 * Determines if the given character is alphabetical
+	 * @param c the character to examine
+	 * @return boolean is the char is in a-z or A-Z
+	 */
+	private boolean isAlpha(char c) {
+		return (c >= 'a' && c <= 'z') ||
+				(c >= 'A' && c <= 'Z') ||
+				c == '_';
+	}
+	
+	/**
+	 * Determines if given character is alphanumeric
+	 * @param c the character to examine
+	 * @return boolean if the character is in the alphabet or a digit
+	 */
+	private boolean isAlphaNumeric(char c) {
+		return isAlpha(c) || isDigit(c);
 	}
 }
