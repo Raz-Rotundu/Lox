@@ -69,6 +69,9 @@ public class Scanner {
 		return current >= source.length();
 	}
 	
+	/**
+	 * Converts a char or sequence or chars to a token
+	 */
 	private void scanToken() {
 		char c = advance();
 		
