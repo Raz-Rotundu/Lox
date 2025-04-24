@@ -8,7 +8,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * GenerateAST -- Automated script which prints out class definitions
+ * GenerateAST -- Automated script which prints out class definitions representing the differernt ASTs
  * Takes name and fields and uses them to define a class with that name and state
  */
 public class GenerateAST {
@@ -28,7 +28,7 @@ public class GenerateAST {
 	}
 	
 	/**
-	 * Defines all classes representing the different possible expressions to be found on the Lox AST
+	 * Defines all classes representing the different ASTs possible in Lox
 	 * @param outputDir - The name of the directory to which the java files will be ouput
 	 * @param baseName - The name of the abstract class which all the expressions will be extending
 	 * @param types -  A list of all the class names and arguments Eg: "Literal : Object Value"
@@ -47,6 +47,8 @@ public class GenerateAST {
 		writer.println();
 		writer.println("abstract class " + baseName + " {");
 		
+		defineVisitor(writer, baseName, types);
+		
 		// Printing out all the ast classes
 		for (String type : types) {
 			String className = type.split(":")[0].trim();
@@ -54,6 +56,10 @@ public class GenerateAST {
 			
 			defineType(writer, baseName, className, fields);
 		}
+		
+		// Base class accept() method
+		writer.println();
+		writer.println("  abstract <R> R accept(Visitor<R> visitor);");
 		
 		writer.println("}");
 		writer.close();
@@ -63,7 +69,7 @@ public class GenerateAST {
 	}
 	
 	/**
-	 * Helper to defineAST -- Defines an individual type representing an abstract class
+	 * Helper to defineAST -- Defines an individual type representing an abstract search tree
 	 * @param writer -- The printWriter used to write to file
 	 * @param baseName -- Abstract class name which will be inherited
 	 * @param className -- The name of the static class
@@ -85,6 +91,14 @@ public class GenerateAST {
 		}
 		writer.println("    }");
 		
+		// Visitor pattern
+		writer.println();
+		writer.println("    @Override");
+		writer.println("    <R> R accept(Visitor<R> visitor) {");
+		writer.println("      return visitor.visit" + className + baseName + "(this);");
+		writer.println("    }");
+
+		
 		// Declaring the fields within the class
 		writer.println();
 		for (String field : fields) {
@@ -92,5 +106,21 @@ public class GenerateAST {
 		}
 		writer.println("  }");
 
+	}
+	
+	/**
+	 * Iterate through all subclasses and declare a visit method for each one
+	 * @param writer
+	 * @param baseName
+	 * @param types
+	 */
+	private static void defineVisitor(PrintWriter writer, String baseName, List<String> types) {
+		writer.println("  interface Visitor<R> {");
+		
+		for(String type : types) {
+			String typeName = type.split(":")[0].trim();
+			writer.println("    R visit" + typeName + baseName + "(" + typeName + " " + baseName.toLowerCase() + ");");		
+		}
+		writer.println(" }");
 	}
 }
