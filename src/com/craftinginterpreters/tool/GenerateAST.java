@@ -2,6 +2,8 @@ package com.craftinginterpreters.tool;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 
@@ -13,17 +15,16 @@ public class GenerateAST {
 	
 	public static void main(String[] args ) throws IOException{
 		if(args.length != 1) {
-			System.out.println("Usage: generate_ast <output directory>");
+			System.err.println("Usage: generate_ast <output directory>");
 			System.exit(64);
-		} else {
-			String outputDir = args[0];
-			defineAST(outputDir, "Expr", Arrays.asList(
-					"Binary : Expr left, Token operator, Expr right",
-					"Grouping : Expr expression",
-					"Literal : Object Value",
-					"Unary : Token Operator Expr right"
-					));
 		}
+		String outputDir = args[0];
+		defineAST(outputDir, "Expr", Arrays.asList(
+				"Binary : Expr left, Token operator, Expr right",
+				"Grouping : Expr expression",
+				"Literal : Object Value",
+				"Unary : Token operator, Expr right"
+				));
 	}
 	
 	/**
@@ -42,14 +43,9 @@ public class GenerateAST {
 		// Printing the abstract class definition
 		writer.println("package com.craftinginterpreters.lox;");
 		writer.println();
-		writer.println("import java.util.list");
+		writer.println("import java.util.List;");
 		writer.println();
 		writer.println("abstract class " + baseName + " {");
-		
-		
-		writer.println("}");
-		writer.close();
-		
 		
 		// Printing out all the ast classes
 		for (String type : types) {
@@ -58,10 +54,16 @@ public class GenerateAST {
 			
 			defineType(writer, baseName, className, fields);
 		}
+		
+		writer.println("}");
+		writer.close();
+		
+		
+
 	}
 	
 	/**
-	 * Helper to defineAST -- Defines an individual type representing an abostract class
+	 * Helper to defineAST -- Defines an individual type representing an abstract class
 	 * @param writer -- The printWriter used to write to file
 	 * @param baseName -- Abstract class name which will be inherited
 	 * @param className -- The name of the static class
@@ -76,7 +78,7 @@ public class GenerateAST {
 		writer.println("    " + className + "(" + fieldList + ") {");
 		
 		// Constructor field assignment
-		String[] fields = fieldList.split(",");
+		String[] fields = fieldList.split(", ");
 		for(String field : fields) {
 			String name = field.split(" ")[1];
 			writer.println("      this." + name + " = " + name + ";");
