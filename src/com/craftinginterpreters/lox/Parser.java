@@ -9,11 +9,23 @@ import static com.craftinginterpreters.lox.TokenType.*;
  */
 public class Parser {
 
+	private static class ParseError extends RuntimeException{}
+	
 	private final List<Token> tokens;
 	private int current = 0;
 	
 	Parser(List<Token> tokens){
 		this.tokens = tokens;
+	}
+	
+	Expr parse() {
+		try {
+			return expression();
+			
+		}
+		catch(ParseError error) {
+			return null;
+		}
 	}
 	
 	// Methods corresponding to Lox grammar rules
@@ -152,11 +164,17 @@ public class Parser {
 		}
 
 		
+		throw error(peek(), "Expect expression.");
 		
 	}
 	
 	
-	// Helper function to match a token type, consumes if match, leaves alone if no match
+	/**
+	 * Helper function to match a token type.
+	 * Consumes the token if it matches, leaves it alone if not
+	 * @param types The types to match the token against
+	 * @return boolean
+	 */
 	private boolean match(TokenType... types) {
 		for(TokenType type : types) {
 			if(check(type)) {
@@ -168,33 +186,97 @@ public class Parser {
 		return false;
 	}
 	
-	// Helper Returns true if token is of given type, but does not consume it
+	/**
+	 * Method to look check if the next token is the expected. If not, throw an error
+	 * @param type
+	 * @param message
+	 * @return
+	 */
+	private Token consume(TokenType type, String message) {
+		if(check(type)) return advance();
+		
+		throw error(peek(), message);
+	}
+	
+	/**
+	 * Helper function that returns true if token is of given type
+	 * @param type the type of token to match
+	 * @return boolean
+	 */
 	private boolean check(TokenType type) {
 		if(isAtEnd()) return false;
 		return peek().type == type;
 	}
 	
-	//  Helper Consumes current token and returns it
+	/**
+	 * Helper method consumes token and returns it
+	 * @return the token consumed
+	 */
 	private Token advance() {
 		if(!isAtEnd()) current++;
 		return previous();
 	}
 	
-	// Helper Returns true if there are no tokens left to parse
+	
+	/**
+	 * Helper returns true if there are no tokens left to parse
+	 * @return
+	 */
 	private boolean isAtEnd() {
 		return peek().type == EOF;
 		
 	}
 	
-	// Helper Returns the current, unconsumed token
+	/**
+	 * Helper returns the current, unconsumed token
+	 * @return current unconsumed token
+	 */
 	private Token peek() {
 		return tokens.get(current);
 
 	}
 	
-	// Helper Returns most recently consumed token
+	/**
+	 * Helper returns most recently consumed token
+	 * @return the most recently consumed token
+	 */
 	private Token previous() {
 		return tokens.get(current - 1);
 	}
-
+	
+	// Error reporting function
+	/**
+	 * Reports the error to the user by printing to terminal
+	 * @param token the offending token
+	 * @param message the error message
+	 * @return a ParseError
+	 */
+	private ParseError error(Token token, String message) {
+		Lox.error(token, message);
+		return new ParseError();
+	}
+	
+	
+	// Synchronization function
+	private void synchronize() {
+		advance();
+		
+		while(!isAtEnd()) {
+			if(previous().type == SEMICOLON) return;
+			
+			switch(peek().type) {
+				case CLASS:
+				case FUN:
+				case VAR:
+				case FOR:
+				case IF:
+				case WHILE:
+				case PRINT:
+				case RETURN:
+					return;
+			
+			}
+			advance();
+		}
+	}
 }
