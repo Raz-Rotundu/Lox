@@ -11,6 +11,7 @@ import java.util.List;
 
 public class Lox {
 	static boolean hadError = false;
+	static boolean hadRuntimeError = false;
 	
 	public static void main(String[] args) throws IOException{
 		if(args.length > 1) {
@@ -31,6 +32,10 @@ public class Lox {
 	private static void runFile(String path) throws IOException{
 		byte[] bytes = Files.readAllBytes(Paths.get(path));
 		run(new String(bytes, Charset.defaultCharset()));
+		
+		// Error codes
+		if (hadError) System.exit(64);
+		if(hadRuntimeError) System.exit(70);
 	}
 	
 	/**
@@ -95,11 +100,22 @@ public class Lox {
 		hadError = true;
 	}
 	
+	/**
+	 * Error reporting code for syntax errors
+	 * @param token the offending token
+	 * @param message the message to be printed to terminal
+	 */
 	static void error(Token token, String message) {
 		if(token.type == TokenType.EOF) {
 			report(token.line, " at end", message);
 		} else {
 			report(token.line, " at '" + token.lexeme + "'", message);
 		}
+	}
+	
+	static void runtimeError(RuntimeError error) {
+		System.err.println(error.getMessage() + 
+				"\n[line " + error.token.line + "]");
+		hadRuntimeError = true;
 	}
 }
