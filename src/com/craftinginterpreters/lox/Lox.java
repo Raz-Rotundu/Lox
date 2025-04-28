@@ -10,6 +10,7 @@ import java.nio.file.Paths;
 import java.util.List;
 
 public class Lox {
+	private static final Interpreter interpreter = new Interpreter();
 	static boolean hadError = false;
 	static boolean hadRuntimeError = false;
 	
@@ -77,7 +78,8 @@ public class Lox {
 		
 		if(hadError) return;
 		
-		System.out.println(new AstPrinter().print(expression));
+//		System.out.println(new AstPrinter().print(expression));
+		interpreter.interpret(expression);
 	}
 	
 	/**
