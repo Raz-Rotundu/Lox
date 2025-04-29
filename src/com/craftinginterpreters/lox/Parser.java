@@ -26,44 +26,20 @@ public class Parser {
 	List<Stmt> parse(){
 		List<Stmt> statements = new ArrayList<>();
 		while(!isAtEnd()) {
-			statements.add(statement());
+			statements.add(declaration());
 		}
 		return statements;
 	}
 	
-	/**
-	 * Method to parse a single expression statement, separating in build print statements from expression statements
-	 * @return a parsed expression statement
-	 */
-	private Stmt statement() {
-		if(match(PRINT)) return printStatement();
-		
-		return expressionStatement();
-	}
+
 	
-	/**
-	 * Parsing a print statement
-	 * @return Syntax tree of the print statement
-	 */
-	private Stmt printStatement() {
-		Expr value = expression();
-		consume(SEMICOLON, "Expect ';' after value.");
-		return new Stmt.Print(value);
-	}
-	
-	
-	/**
-	 * Parse non-print expression, consume semicolon and return syntax tree
-	 * @return
-	 */
-	private Stmt expressionStatement() {
-		Expr expr = expression();
-		consume(SEMICOLON, "Expect ';' after value.");
-		return new Stmt.Expression(expr);
-	}
+
 	
 	// Methods corresponding to Lox grammar rules
 	/*
+	 * program        → declaration* EOF ;
+	 * declaration    → varDecl | statement ;
+	 * statement      → exprStmt | printStmt ;
 	 * expression     → equality ;
 	 * equality       → comparison ( ( "!=" | "==" ) comparison )* ;
      * comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
@@ -74,6 +50,33 @@ public class Parser {
 	 */
 	
 
+	/**
+	 * Method representing declarations rule
+	 * declaration -> varDecl | statement ;
+	 * @return Parsed declaration
+	 */
+	private Stmt declaration() {
+		try {
+			if(match(VAR)) return varDeclaration();
+			
+			return statement();
+		} catch(ParseError error) {
+			synchronize();
+			return null;
+		}
+	}
+	
+	/**
+	 * Method to parse a single expression statement, corresponding to statement rule
+	 * statement -> exprStmt | printStmt ;
+	 * @return a parsed expression statement
+	 */
+	private Stmt statement() {
+		if(match(PRINT)) return printStatement();
+		
+		return expressionStatement();
+	}
+	
 	/**
 	 * Method corresponding to expression rule
 	 * expression --> equality ;
@@ -195,12 +198,16 @@ public class Parser {
 			consume(RIGHT_PAREN, "Expect ')' after expression.");
 			return new Expr.Grouping(expr);
 		}
-
+		
+		if(match(IDENTIFIER)) {
+			return new Expr.Variable(previous());
+		}
 		
 		throw error(peek(), "Expect expression.");
 		
 	}
 	
+
 	
 	/**
 	 * Helper function to match a token type.
@@ -277,7 +284,7 @@ public class Parser {
 		return tokens.get(current - 1);
 	}
 	
-	// Error reporting function
+
 	/**
 	 * Reports the error to the user by printing to terminal
 	 * @param token the offending token
@@ -290,7 +297,11 @@ public class Parser {
 	}
 	
 	
-	// Synchronization function
+
+	/**
+	 * Resets the state and stream of the parser to be on the next available token
+	 * Next available token is the first token matching the rule currently being evaluated
+	 */
 	private void synchronize() {
 		advance();
 		
@@ -311,5 +322,45 @@ public class Parser {
 			}
 			advance();
 		}
+	}
+	
+	/**
+	 * Parsing a print statement
+	 * @return Syntax tree of the print statement
+	 */
+	private Stmt printStatement() {
+		Expr value = expression();
+		consume(SEMICOLON, "Expect ';' after value.");
+		return new Stmt.Print(value);
+	}
+	
+	
+	/**
+	 * Parse non-print expression, consume semicolon and return syntax tree
+	 * @return
+	 */
+	private Stmt expressionStatement() {
+		Expr expr = expression();
+		consume(SEMICOLON, "Expect ';' after value.");
+		return new Stmt.Expression(expr);
+	}
+	
+	/**
+	 * Consumes an identifier token, then based on the next token, 
+	 * determines if this is a variable declaration or a variable expression.
+	 * Declarations means the initializer expression will be parsed
+	 * @return
+	 */
+	private Stmt varDeclaration() {
+		Token name = consume(IDENTIFIER, "Expect variable name.");
+		
+		Expr initializer = null;
+		
+		if(match(EQUAL)) {
+			initializer = expression();
+		}
+		
+		consume(SEMICOLON, "Expect ';' after variable declaration.");
+		return new Stmt.Var(name, initializer);
 	}
 }

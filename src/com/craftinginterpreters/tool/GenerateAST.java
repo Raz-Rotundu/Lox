@@ -20,10 +20,11 @@ public class GenerateAST {
 		}
 		String outputDir = args[0];
 		defineAST(outputDir, "Expr", Arrays.asList(
-				"Binary : Expr left, Token operator, Expr right",
+				"Binary   : Expr left, Token operator, Expr right",
 				"Grouping : Expr expression",
-				"Literal : Object Value",
-				"Unary : Token operator, Expr right"
+				"Literal  : Object Value",
+				"Unary    : Token operator, Expr right",
+				"Variable : Token name"
 				));
 		
 		defineAST(outputDir, "Stmt", Arrays.asList(

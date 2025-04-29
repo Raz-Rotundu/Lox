@@ -4,6 +4,8 @@ import java.util.List;
 
 public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>{
 	
+	private Environment environment = new Environment();
+	
 	
 	/**
 	 * Public API of the interpreter, calls and interprets expressions
@@ -40,7 +42,27 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>{
 		return object.toString();
 	}
 	
-	//Methods for each of the four possible expression trees
+	
+	//Methods for each of the expression trees
+	
+	// Evaluate a declaration statement
+	@Override
+	public Void visitVarStmt(Stmt.Var stmt) {
+		Object value = null;
+		if(stmt.initializer != null) {
+			value = evaluate(stmt.initializer);
+			
+		}
+		
+		environment.define(stmt.name.lexeme, value);
+		return null;
+	}
+	
+	// Evaluate a variable expression
+	@Override
+	public Object visitVariableExpr(Expr.Variable expr) {
+		return environment.get(expr.name);
+	}
 	/**
 	 * Evaluate a literal
 	 * Pulls the runtime value of the literal tree node and returns it
