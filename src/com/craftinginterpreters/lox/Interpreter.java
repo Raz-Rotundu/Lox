@@ -1,17 +1,20 @@
 package com.craftinginterpreters.lox;
 
-public class Interpreter implements Expr.Visitor<Object>{
+import java.util.List;
+
+public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>{
 	
 	
 	/**
 	 * Public API of the interpreter, calls and interprets expressions
 	 * @param expression the expression to be interpreted
 	 */
-	void interpret(Expr expression) {
+	void interpret(List<Stmt> statements) {
 		try {
-			Object value = evaluate(expression);
-			System.out.println(stringify(value));
-		} catch (RuntimeError error){
+			for(Stmt statement : statements) {
+				execute(statement);
+			}
+		} catch (RuntimeError error) {
 			Lox.runtimeError(error);
 		}
 	}
@@ -68,6 +71,14 @@ public class Interpreter implements Expr.Visitor<Object>{
 	 */
 	private Object evaluate(Expr expr) {
 		return expr.accept(this);
+	}
+	
+	/**
+	 * Helper method that sends the statement back into the interpreter's visitor implementation
+	 * @param stmt the statement to be evaluated
+	 */
+	private void execute(Stmt stmt) {
+		stmt.accept(this);
 	}
 	
 	/**
@@ -184,6 +195,29 @@ public class Interpreter implements Expr.Visitor<Object>{
 		return null;
 	}
 	
+
+	/**
+	 * Evaluate inner expression, but do not return anything (Expression statements have no return)
+	 * @param The statement to be parsed
+	 */
+	@Override
+	public Void visitExpressionStmt(Stmt.Expression stmt) {
+		evaluate(stmt.expression);
+		return null;
+	}
+	
+	/**
+	 * Evaluate inner expression, but do not return anything (Print expressions have no return)
+	 * Prints out expression value to stdOut before discarding
+	 * @param The print statement to be parsed
+	 */
+	@Override
+	public Void visitPrintStmt(Stmt.Print stmt) {
+		Object value = evaluate(stmt.expression);
+		System.out.println(stringify(value));
+		
+		return null;
+	}
 	/**
 	 * Evaluates equality based on Lox's notion of equality
 	 * Handles null parameters so that we don't throw nullPointerExceptions from calling equals on null

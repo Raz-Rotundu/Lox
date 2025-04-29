@@ -1,5 +1,6 @@
 package com.craftinginterpreters.lox;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.craftinginterpreters.lox.TokenType.*;
@@ -18,14 +19,58 @@ public class Parser {
 		this.tokens = tokens;
 	}
 	
-	Expr parse() {
-		try {
-			return expression();
-			
+//	Expr parse() {
+//		try {
+//			return expression();
+//			
+//		}
+//		catch(ParseError error) {
+//			return null;
+//		}
+//	}
+	
+	
+	/**
+	 * Main method of parser, takes tokens and returns abstract syntax trees
+	 * @return A list of statements
+	 */
+	List<Stmt> parse(){
+		List<Stmt> statements = new ArrayList<>();
+		while(!isAtEnd()) {
+			statements.add(statement());
 		}
-		catch(ParseError error) {
-			return null;
-		}
+		return statements;
+	}
+	
+	/**
+	 * Method to parse a single expression statement, separating in build print statements from expression statements
+	 * @return a parsed expression statement
+	 */
+	private Stmt statement() {
+		if(match(PRINT)) return printStatement();
+		
+		return expressionStatement();
+	}
+	
+	/**
+	 * Parsing a print statement
+	 * @return Syntax tree of the print statement
+	 */
+	private Stmt printStatement() {
+		Expr value = expression();
+		consume(SEMICOLON, "Expect ';' after value.");
+		return new Stmt.Print(value);
+	}
+	
+	
+	/**
+	 * Parse non-print expression, consume semicolon and return syntax tree
+	 * @return
+	 */
+	private Stmt expressionStatement() {
+		Expr expr = expression();
+		consume(SEMICOLON, "Expect ';' after value.");
+		return new Stmt.Expression(expr);
 	}
 	
 	// Methods corresponding to Lox grammar rules
@@ -48,7 +93,6 @@ public class Parser {
 	private Expr expression() {
 		return equality();
 	}
-	
 
 	/**
 	 * Method corresponding to the equality rule
