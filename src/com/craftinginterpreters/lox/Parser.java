@@ -249,6 +249,8 @@ public class Parser {
 	 */
 	private boolean check(TokenType type) {
 		if(isAtEnd()) return false;
+		//delete this
+		var p = peek().type;
 		return peek().type == type;
 	}
 	

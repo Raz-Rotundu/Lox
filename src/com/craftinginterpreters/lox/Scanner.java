@@ -271,8 +271,9 @@ public class Scanner {
 		if(type == null) type = IDENTIFIER;
 		addToken(type);
 		
-		addToken(IDENTIFIER);
+//		addToken(IDENTIFIER);
 	}
+
 	
 	/**
 	 * Determines if the given character is alphabetical
