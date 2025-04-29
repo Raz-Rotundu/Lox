@@ -25,6 +25,10 @@ public class GenerateAST {
 				"Literal : Object Value",
 				"Unary : Token operator, Expr right"
 				));
+		
+		defineAST(outputDir, "Stmt", Arrays.asList(
+				"Expression : Expr expression",
+				"Print : Expr expression"));
 	}
 	
 	/**
