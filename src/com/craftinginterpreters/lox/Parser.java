@@ -39,8 +39,10 @@ public class Parser {
 	/*
 	 * program        → declaration* EOF ;
 	 * declaration    → varDecl | statement ;
-	 * statement      → exprStmt | printStmt ;
-	 * expression     → equality ;
+	 * statement      → exprStmt | printStmt | block;
+	 * block          → "{" declaration* "}" ;
+	 * expression     → assignment ;
+	 * assignment     → IDENTIFIER "=" assignment | equality ;
 	 * equality       → comparison ( ( "!=" | "==" ) comparison )* ;
      * comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
      * term           → factor ( ( "-" | "+" ) factor )* ;
@@ -78,12 +80,53 @@ public class Parser {
 	}
 	
 	/**
+	 * Method to parse blocks according to block rule
+	 * block  --> "{" declaration* "}" ;
+	 * @return A parsed code block
+	 */
+	private List<Stmt> block(){
+		List<Stmt> statements = new ArrayList<>();
+		
+		while(!check(RIGHT_BRACE) && !isAtEnd()) {
+			statements.add(declaration());
+		}
+		
+		consume(RIGHT_BRACE, "Expect '}' after block.");
+		return statements;
+	}
+	/**
 	 * Method corresponding to expression rule
 	 * expression --> equality ;
 	 * @return A reference to an equality
 	 */
 	private Expr expression() {
-		return equality();
+		return assignment();
+	}
+	
+	// Assignment rule
+	/**
+	 * Method corresponding to the assignment rule
+	 * assignment --> IDENTIFIER "=" assignment | equality ;
+	 * Before an assignment expression node is created, check left hand side to see what kind of assignment target it is
+	 * Convert r-value expression node into l-value representation
+	 * @return Parsed equality reference
+	 */
+	private Expr assignment() {
+		Expr expr = equality();
+		
+		if(match(EQUAL)) {
+			Token equals = previous();
+			Expr value = assignment();
+			
+			if(expr instanceof Expr.Variable) {
+				Token name = ((Expr.Variable)expr).name;
+				return new Expr.Assign(name, value);
+			}
+			
+			error(equals, "Invalid assignment target");
+		}
+		
+		return expr;
 	}
 
 	/**

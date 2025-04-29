@@ -45,7 +45,22 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>{
 	
 	//Methods for each of the expression trees
 	
-	// Evaluate a declaration statement
+	// Evaluate assignment expression
+	/**
+	 * 
+	 */
+	@Override
+	public Object visitAssignExpr(Expr.Assign expr) {
+		Object value = evaluate(expr.value);
+		environment.assign(expr.name, value);
+		return value;
+	}
+	
+	/**
+	 * Evaluate a declaration statement
+	 * If the variable has an initializer it gets evaluated, otherwise variable is set to nil if not initialized
+	 * @param Variable statement to be evaluated
+	 */
 	@Override
 	public Void visitVarStmt(Stmt.Var stmt) {
 		Object value = null;
@@ -58,7 +73,13 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>{
 		return null;
 	}
 	
-	// Evaluate a variable expression
+
+	/**
+	 * Evaluate a variable expression
+	 * Forwards to the environment, which will make sure the variable is defined
+	 * @param the Variable expression to be evaluated
+	 * @return the value corresponding to the variable
+	 */
 	@Override
 	public Object visitVariableExpr(Expr.Variable expr) {
 		return environment.get(expr.name);
@@ -66,6 +87,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>{
 	/**
 	 * Evaluate a literal
 	 * Pulls the runtime value of the literal tree node and returns it
+	 * @param expr the literal expression to be evaluated
 	 * @return The run time value of the literal node
 	 */
 	@Override
@@ -78,6 +100,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>{
 	/**
 	 * Evaluate a grouping
 	 * Recursively evaluate the expression within the parentheses and returns it
+	 * @param expr the grouping expression to be evaluated
 	 * @return evaluation of the grouping expression itself
 	 */
 	@Override
@@ -240,6 +263,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>{
 		
 		return null;
 	}
+	
 	/**
 	 * Evaluates equality based on Lox's notion of equality
 	 * Handles null parameters so that we don't throw nullPointerExceptions from calling equals on null
@@ -254,5 +278,25 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>{
 		return a.equals(b);
 	}
 	
+	// Semantics
+	@Override
+	public Void visitBlockStmt(Stmt.Block stmt) {
+		executeBlock(stmt.statements, new Environment(environment));
+		return null;
+	}
+	
+	void executeBlock(List<Stmt> statements, Environment environment) {
+		Environment previous = this.environment;
+		
+		try {
+			this.environment = environment;
+			
+			for(Stmt statement : statements) {
+				execute(statement);
+			}
+		} finally {
+			this.environment = previous;
+		}
+	}
 	
 }

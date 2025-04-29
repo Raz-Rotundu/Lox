@@ -8,8 +8,37 @@ import java.util.Map;
  */
 public class Environment {
 	
+	final Environment enclosing;
+	
 	private final Map<String, Object> values = new HashMap<String, Object>();
 	
+	Environment(){
+		enclosing = null;
+		
+	}
+	
+	Environment(Environment enclosing){
+		this.enclosing = enclosing;
+	}
+	/**
+	 * Assigns a value to an existing variable. Throws runtime error if the variable does not exist
+	 * @param name the token representing the variable
+	 * @param value the value to be assigned to the variable
+	 */
+	void assign(Token name, Object value) {
+		if(values.containsKey(name.lexeme)) {
+			values.put(name.lexeme, value);
+			return;
+		}
+		
+		if(enclosing != null) {
+			enclosing.assign(name, value);
+			return;
+		}
+		
+		throw new RuntimeError(name,
+				"Undefined variable '" + name.lexeme + "'.");
+	}
 	
 	/**
 	 * Retrieves the appropriate mapping from the environment, throws RuntimeError if not present
@@ -20,6 +49,8 @@ public class Environment {
 		if(values.containsKey(name.lexeme)) {
 			return values.get(name.lexeme);
 		}
+		
+		if(enclosing != null) return enclosing.get(name);
 		
 		throw new RuntimeError(name, "Undefined variable '" + name.lexeme + "'.");
 	}
