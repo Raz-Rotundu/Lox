@@ -284,7 +284,8 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>{
 		executeBlock(stmt.statements, new Environment(environment));
 		return null;
 	}
-	
+
+	// Executes list of statements in the context of a given environment
 	void executeBlock(List<Stmt> statements, Environment environment) {
 		Environment previous = this.environment;
 		

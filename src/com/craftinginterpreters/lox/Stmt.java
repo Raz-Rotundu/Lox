@@ -10,7 +10,7 @@ abstract class Stmt {
     R visitVarStmt(Var stmt);
  }
  static class Block extends Stmt {
-    Block(List<Smt> statements) {
+    Block(List<Stmt> statements) {
       this.statements = statements;
     }
 
@@ -19,7 +19,7 @@ abstract class Stmt {
       return visitor.visitBlockStmt(this);
     }
 
-    final List<Smt> statements;
+    final List<Stmt> statements;
   }
  static class Expression extends Stmt {
     Expression(Expr expression) {

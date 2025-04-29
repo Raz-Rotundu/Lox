@@ -76,6 +76,8 @@ public class Parser {
 	private Stmt statement() {
 		if(match(PRINT)) return printStatement();
 		
+		if(match(LEFT_BRACE)) return new Stmt.Block(block());
+		
 		return expressionStatement();
 	}
 	
@@ -97,7 +99,7 @@ public class Parser {
 	/**
 	 * Method corresponding to expression rule
 	 * expression --> equality ;
-	 * @return A reference to an equality
+	 * @return A reference to an assignment
 	 */
 	private Expr expression() {
 		return assignment();
