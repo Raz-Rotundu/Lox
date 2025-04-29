@@ -19,17 +19,6 @@ public class Parser {
 		this.tokens = tokens;
 	}
 	
-//	Expr parse() {
-//		try {
-//			return expression();
-//			
-//		}
-//		catch(ParseError error) {
-//			return null;
-//		}
-//	}
-	
-	
 	/**
 	 * Main method of parser, takes tokens and returns abstract syntax trees
 	 * @return A list of statements
@@ -249,8 +238,6 @@ public class Parser {
 	 */
 	private boolean check(TokenType type) {
 		if(isAtEnd()) return false;
-		//delete this
-		var p = peek().type;
 		return peek().type == type;
 	}
 	

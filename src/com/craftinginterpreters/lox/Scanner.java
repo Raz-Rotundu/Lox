@@ -116,7 +116,7 @@ public class Scanner {
 		// Ignoring meaningless chars, and starting new line on newline
 		case(' '):
 		case('\r'):
-		case('t'):
+		case('\t'):
 			break;
 		
 		case('\n'):
