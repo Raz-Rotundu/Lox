@@ -43,10 +43,24 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>{
 	}
 	
 	
+	
+	/**
+	 * Evaluates while statements
+	 * Checks truthiness of while condition before executing the loop
+	 */
+	@Override
+	public Void visitWhileStmt(Stmt.While stmt) {
+		while(isTruthy(evaluate(stmt.condition))) {
+			execute(stmt.body);
+		}
+		return null;
+	}
+	
 	/**
 	 * Evaluates logical OR or AND expressions
 	 * Checks the left value first to see if we can short-circuit.
 	 */
+	@Override
 	public Object visitLogicalExpr(Expr.Logical expr) {
 		Object left = evaluate(expr.left);
 		

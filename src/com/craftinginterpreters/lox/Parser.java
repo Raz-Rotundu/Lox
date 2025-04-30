@@ -2,7 +2,7 @@ package com.craftinginterpreters.lox;
 
 import java.util.ArrayList;
 import java.util.List;
-
+import java.util.Arrays;
 import static com.craftinginterpreters.lox.TokenType.*;
 
 /**
@@ -39,7 +39,9 @@ public class Parser {
 	/*
 	 * program        → declaration* EOF ;
 	 * declaration    → varDecl | statement ;
-	 * statement      → exprStmt | printStmt | block | ifStmt;
+	 * statement      → exprStmt | printStmt | block | ifStmt | whileStmt | forStmt;
+	 * forStmt        → "for" "(" ( varDecl | exprStmt | ";" ) expression? ";" expression? ")" statement ;
+	 * whileStmt      → "while" "(" expression ")" statement ;
 	 * ifStmt         → "if" "(" expression ")" statement ( "else" statement )? ;
 	 * block          → "{" declaration* "}" ;
 	 * expression     → assignment ;
@@ -73,11 +75,15 @@ public class Parser {
 	
 	/**
 	 * Method to parse a single expression statement, corresponding to statement rule
-	 * statement --> exprStmt | printStmt | block | ifStmt;
+	 * statement --> exprStmt | printStmt | block | ifStmt | whileStmt | forStmt;
 	 * @return a parsed expression statement
 	 */
 	private Stmt statement() {
+		if(match(FOR)) return forStatement();
+		
 		if(match(PRINT)) return printStatement();
+		
+		if(match(WHILE)) return whileStatement();
 		
 		if(match(LEFT_BRACE)) return new Stmt.Block(block());
 		
@@ -86,6 +92,76 @@ public class Parser {
 		return expressionStatement();
 	}
 	
+	/**
+	 * Method corresponding to the forStmt rule
+	 * forStmt --> "for" "(" ( varDecl | exprStmt | ";" ) expression? ";" expression? ")" statement ;
+	 * The for statement is "de-sugared" into a while loop, and then parsed as such
+	 * @return A parsed while loopS
+	 */
+	private Stmt forStatement() {
+		consume(LEFT_PAREN, "Expect '(' after 'for'.");
+		
+		// Initializer
+		// If the token after '(' is semicolon, there is no initializer
+		//Otherwise it is either a variable or expression
+		Stmt initializer;
+		if(match(SEMICOLON)) {
+			initializer = null;
+			
+		} else if(match(VAR)) {
+			initializer = varDeclaration();
+			
+		} else {
+			initializer = expressionStatement();
+		}
+		
+		// Condition
+		// Check for semicolon to see if clause has been omitted
+		Expr condition = null;
+		if(!check(SEMICOLON)) {
+			condition = expression();
+			
+		}
+		consume(SEMICOLON, "Expect ';' after loop condition.");
+		
+		// Increment
+		Expr increment = null;
+		
+		if(!check(RIGHT_PAREN)) {
+			increment = expression();
+		}
+		consume(RIGHT_PAREN, "Expect ')' after for clauses.");
+		
+		
+		Stmt body = statement();
+		
+		// Desugaring to while loop
+		if(increment != null) {
+			body = new Stmt.Block(
+					Arrays.asList(
+							body,
+							new Stmt.Expression(increment)));		
+		}
+		
+		if(initializer != null) {
+			body = new Stmt.Block(Arrays.asList(initializer, body));
+		}
+		return body;
+	}
+	
+	/**
+	 * Method corresponding to whileStmt rule
+	 * * whileStmt --> "while" "(" expression ")" statement ;
+	 * @return
+	 */
+	private Stmt whileStatement() {
+		consume(LEFT_PAREN, "Expect '(' after 'while'.");
+		Expr condition = expression();
+		consume(RIGHT_PAREN, "Expect ')' after condition.");
+		
+		Stmt body = statement();
+		return new Stmt.While(condition, body);
+	}
 	/**
 	 * Method representing ifStmt rule
 	 * ifStmt --> "if" "(" expression ")" statement ( "else" statement )? ;
