@@ -39,11 +39,14 @@ public class Parser {
 	/*
 	 * program        → declaration* EOF ;
 	 * declaration    → varDecl | statement ;
-	 * statement      → exprStmt | printStmt | block;
+	 * statement      → exprStmt | printStmt | block | ifStmt;
+	 * ifStmt         → "if" "(" expression ")" statement ( "else" statement )? ;
 	 * block          → "{" declaration* "}" ;
 	 * expression     → assignment ;
-	 * assignment     → IDENTIFIER "=" assignment | equality ;
+	 * assignment     → IDENTIFIER "=" assignment | logic_or;
 	 * equality       → comparison ( ( "!=" | "==" ) comparison )* ;
+	 * logic_or       → logic_and ( "or" logic_and )* ;
+	 * logic_and      → equality ( "and" equality )* ;
      * comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
      * term           → factor ( ( "-" | "+" ) factor )* ;
      * factor         → unary ( ( "/" | "*" ) unary )* ;
@@ -70,7 +73,7 @@ public class Parser {
 	
 	/**
 	 * Method to parse a single expression statement, corresponding to statement rule
-	 * statement -> exprStmt | printStmt ;
+	 * statement --> exprStmt | printStmt | block | ifStmt;
 	 * @return a parsed expression statement
 	 */
 	private Stmt statement() {
@@ -78,7 +81,29 @@ public class Parser {
 		
 		if(match(LEFT_BRACE)) return new Stmt.Block(block());
 		
+		if(match(IF)) return ifStatement();
+		
 		return expressionStatement();
+	}
+	
+	/**
+	 * Method representing ifStmt rule
+	 * ifStmt --> "if" "(" expression ")" statement ( "else" statement )? ;
+	 * @return A parsed reference to an if statement
+	 */
+	private Stmt ifStatement() {
+		consume(LEFT_PAREN, "Expect '(' after 'if'.");
+		Expr condition = expression();
+		consume(RIGHT_PAREN, "Expect ')' after if condition.");
+		
+		Stmt thenBranch = statement();
+		Stmt elseBranch = null;
+		
+		if(match(ELSE)) {
+			elseBranch = statement();
+		}
+		
+		return new Stmt.If(condition, thenBranch, elseBranch);
 	}
 	
 	/**
@@ -105,16 +130,15 @@ public class Parser {
 		return assignment();
 	}
 	
-	// Assignment rule
 	/**
 	 * Method corresponding to the assignment rule
-	 * assignment --> IDENTIFIER "=" assignment | equality ;
+	 * assignment --> IDENTIFIER "=" assignment | logic_or ;
 	 * Before an assignment expression node is created, check left hand side to see what kind of assignment target it is
 	 * Convert r-value expression node into l-value representation
 	 * @return Parsed equality reference
 	 */
 	private Expr assignment() {
-		Expr expr = equality();
+		Expr expr = or();
 		
 		if(match(EQUAL)) {
 			Token equals = previous();
@@ -149,12 +173,45 @@ public class Parser {
 		return expr;
 	}
 	
-
+	/**
+	 * Method corresponding to logic_or rule
+	 * logic_or --> logic_and ( "or" logic_and )*;
+	 * @return and expression reference or parsed OR expression syntax tree
+	 */
+	private Expr or() {
+		Expr expr = and();
+		
+		while(match(OR)) {
+			Token operator = previous();
+			Expr right = and();
+			
+			expr = new Expr.Logical(expr, operator, right);
+		}
+		
+		return expr;
+	}
+	
+	/** Method corresponding to logic_and rule
+	 * logic_and --> equality ( "and" equality )* ;
+	 * @return equality expression reference or parsed AND expression syntax tree
+	 */
+	private Expr and() {
+		Expr expr = equality();
+		
+		while(match(AND)) {
+			Token operator = previous();
+			Expr right = equality();
+			expr = new Expr.Logical(expr, operator, right);
+		}
+		
+		return expr;
+	}
+	
 	/**
 	 * Method corresponding to comparison rule
 	 * comparison ->  term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
 	 * On encountering a comparison operator, creates new term expression of two terms and comparison operator
-	 * @return A refernce to a term
+	 * @return term reference or parsed comparison syntax tree
 	 */
 	private Expr comparison() {
 		Expr expr = term();
