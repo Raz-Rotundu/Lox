@@ -52,7 +52,9 @@ public class Parser {
      * comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
      * term           → factor ( ( "-" | "+" ) factor )* ;
      * factor         → unary ( ( "/" | "*" ) unary )* ;
-     * unary          → ( "!" | "-" ) unary | primary ;
+     * unary          → ( "!" | "-" ) unary | call ;
+     * call           → primary ( "(" arguments? ")" )* ;
+     * arguments      → expression ( "," expression )* ;
      * primary        → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" ;
 	 */
 	
@@ -344,7 +346,7 @@ public class Parser {
 	
 	/**
 	 * Method representing Unary operations rule
-	 * unary --> ( "!" | "-" ) unary | primary ;
+	 * unary --> ( "!" | "-" ) unary | call ;
 	 * On encountering unary operator, construct unary expression from operator and previous expression
 	 * @return a primary expression reference
 	 */
@@ -355,9 +357,52 @@ public class Parser {
 			return new Expr.Unary(operator, right);
 		}
 		
-		return primary();
+		return call();
 	}
 	
+	/**
+	 * Method representing call grammar rule
+	 *  call --> primary ( "(" arguments? ")" )* ;
+	 *  Anytime an left parentheses is encountered, finish an expression call
+	 * @return A called expression or primary expression reference
+	 */
+	private Expr call() {
+		Expr expr = primary();
+		
+		while(true) {
+			if(match(LEFT_PAREN)) {
+				expr = finishCall(expr);
+			} else {
+				break;
+			}
+		}
+		
+		return expr;
+	}
+	
+	/**
+	 * Method representing arguments grammar rule
+	 * arguments --> expression ( "," expression )* ;
+	 * @param callee The expression which is being called
+	 * @return an parsed callee with all of its arguments syntax tree
+	 */
+	private Expr finishCall(Expr callee) {
+		List<Expr> arguments = new ArrayList<>();
+		if(!check(RIGHT_PAREN)) {
+			do {
+				// Argument limit in case I decide to do the bytecode compiler too
+				if(arguments.size() >= 255) {
+					error(peek(), "Can't have more than 255 arguments");
+				}
+				arguments.add(expression());
+			} while (match(COMMA));
+		}
+		
+		Token paren = consume(RIGHT_PAREN,
+				"Expect ')' after arguments.");
+		
+		return new Expr.Call(callee, paren, arguments);
+	}
 	
 	/**
 	 * Method representing primary operations rule
@@ -544,4 +589,5 @@ public class Parser {
 		consume(SEMICOLON, "Expect ';' after variable declaration.");
 		return new Stmt.Var(name, initializer);
 	}
+	
 }
