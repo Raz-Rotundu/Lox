@@ -119,14 +119,13 @@ public class Parser {
 		// Check for semicolon to see if clause has been omitted
 		Expr condition = null;
 		if(!check(SEMICOLON)) {
-			condition = expression();
-			
+			condition = expression();	
 		}
 		consume(SEMICOLON, "Expect ';' after loop condition.");
 		
+		
 		// Increment
 		Expr increment = null;
-		
 		if(!check(RIGHT_PAREN)) {
 			increment = expression();
 		}
@@ -143,9 +142,13 @@ public class Parser {
 							new Stmt.Expression(increment)));		
 		}
 		
+		if(condition == null) condition = new Expr.Literal(true);
+		body = new Stmt.While(condition, body);
+		
 		if(initializer != null) {
 			body = new Stmt.Block(Arrays.asList(initializer, body));
 		}
+		
 		return body;
 	}
 	
