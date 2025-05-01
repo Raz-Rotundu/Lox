@@ -35,11 +35,16 @@ public class Parser {
 	
 
 	
-	// Methods corresponding to Lox grammar rules
+
+	// LOX GRAMMAR RULES
 	/*
 	 * program        → declaration* EOF ;
-	 * declaration    → varDecl | statement ;
+	 * declaration    → varDecl | statement | funDecl;
+	 * varDecl        → "var" IDENTIFIER ( "=" expression )? ";" ;
 	 * statement      → exprStmt | printStmt | block | ifStmt | whileStmt | forStmt;
+	 * funDecl        → "fun" function ;
+	 * function       → IDENTIFIER "(" parameters? ")" block ;
+	 * parameters     → IDENTIFIER ( "," IDENTIFIER )* ;
 	 * forStmt        → "for" "(" ( varDecl | exprStmt | ";" ) expression? ";" expression? ")" statement ;
 	 * whileStmt      → "while" "(" expression ")" statement ;
 	 * ifStmt         → "if" "(" expression ")" statement ( "else" statement )? ;
@@ -58,14 +63,16 @@ public class Parser {
      * primary        → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" ;
 	 */
 	
-
+	// Methods corresponding to Lox grammar rules
+	
 	/**
 	 * Method representing declarations rule
-	 * declaration -> varDecl | statement ;
+	 * declaration -> varDecl | statement | funDecl;
 	 * @return Parsed declaration
 	 */
 	private Stmt declaration() {
 		try {
+			if(match(FUN)) return function("function");
 			if(match(VAR)) return varDeclaration();
 			
 			return statement();
@@ -73,6 +80,27 @@ public class Parser {
 			synchronize();
 			return null;
 		}
+	}
+	
+	/**
+	 * Function corresponding to varDecl rule
+	 * varDecl        → "var" IDENTIFIER ( "=" expression )? ";" ;
+	 * Consumes an identifier token, then based on the next token, 
+	 * determines if this is a variable declaration or a variable expression.
+	 * Declarations means the initializer expression will be parsed
+	 * @return
+	 */
+	private Stmt varDeclaration() {
+		Token name = consume(IDENTIFIER, "Expect variable name.");
+		
+		Expr initializer = null;
+		
+		if(match(EQUAL)) {
+			initializer = expression();
+		}
+		
+		consume(SEMICOLON, "Expect ';' after variable declaration.");
+		return new Stmt.Var(name, initializer);
 	}
 	
 	/**
@@ -211,6 +239,27 @@ public class Parser {
 		return assignment();
 	}
 	
+	private Stmt.Function function(String kind) {
+		Token name = consume(IDENTIFIER, "Expect " + kind + " name.");
+		consume(LEFT_PAREN, "Expect '(' after " + kind + " name.");
+		List<Token> parameters = new ArrayList<>();
+		
+		if(!check(RIGHT_PAREN)) {
+			do {
+				if (parameters.size() >= 255) {
+					error(peek(), "Can't have more than 255 parameters.");
+				}
+				
+				parameters.add(consume(IDENTIFIER, "Expect parameter name"));
+				
+			} while(match(COMMA));			
+		}
+		consume(RIGHT_PAREN, "Expect ')' after parameters.");
+		
+		consume(LEFT_BRACE, "Expect '{' before " + kind + " body.");
+		List<Stmt> body = block();
+		return new Stmt.Function(name, parameters, body);
+	}
 	/**
 	 * Method corresponding to the assignment rule
 	 * assignment --> IDENTIFIER "=" assignment | logic_or ;
@@ -571,23 +620,5 @@ public class Parser {
 		return new Stmt.Expression(expr);
 	}
 	
-	/**
-	 * Consumes an identifier token, then based on the next token, 
-	 * determines if this is a variable declaration or a variable expression.
-	 * Declarations means the initializer expression will be parsed
-	 * @return
-	 */
-	private Stmt varDeclaration() {
-		Token name = consume(IDENTIFIER, "Expect variable name.");
-		
-		Expr initializer = null;
-		
-		if(match(EQUAL)) {
-			initializer = expression();
-		}
-		
-		consume(SEMICOLON, "Expect ';' after variable declaration.");
-		return new Stmt.Var(name, initializer);
-	}
 	
 }
