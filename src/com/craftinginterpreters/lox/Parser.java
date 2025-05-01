@@ -41,10 +41,11 @@ public class Parser {
 	 * program        → declaration* EOF ;
 	 * declaration    → varDecl | statement | funDecl;
 	 * varDecl        → "var" IDENTIFIER ( "=" expression )? ";" ;
-	 * statement      → exprStmt | printStmt | block | ifStmt | whileStmt | forStmt;
+	 * statement      → exprStmt | printStmt | block | ifStmt | whileStmt | forStmt | returnStmt;
 	 * funDecl        → "fun" function ;
 	 * function       → IDENTIFIER "(" parameters? ")" block ;
 	 * parameters     → IDENTIFIER ( "," IDENTIFIER )* ;
+	 * returnStmt     → "return" expression? ";" ;
 	 * forStmt        → "for" "(" ( varDecl | exprStmt | ";" ) expression? ";" expression? ")" statement ;
 	 * whileStmt      → "while" "(" expression ")" statement ;
 	 * ifStmt         → "if" "(" expression ")" statement ( "else" statement )? ;
@@ -105,13 +106,15 @@ public class Parser {
 	
 	/**
 	 * Method to parse a single expression statement, corresponding to statement rule
-	 * statement --> exprStmt | printStmt | block | ifStmt | whileStmt | forStmt;
+	 * statement --> exprStmt | printStmt | block | ifStmt | whileStmt | forStmt | returnStmt;
 	 * @return a parsed expression statement
 	 */
 	private Stmt statement() {
 		if(match(FOR)) return forStatement();
 		
 		if(match(PRINT)) return printStatement();
+		
+		if(match(RETURN)) return returnStatement();
 		
 		if(match(WHILE)) return whileStatement();
 		
@@ -120,6 +123,35 @@ public class Parser {
 		if(match(IF)) return ifStatement();
 		
 		return expressionStatement();
+	}
+
+	/**
+	 * Method corresponding to function grammar rule
+	 * function       → IDENTIFIER "(" parameters? ")" block ;
+	 * Throws error if function has more than 255 parameters
+	 * @param kind the kind of method declaration being parsed (function or class)
+	 * @return A parsed function reference
+	 */
+	private Stmt.Function function(String kind) {
+		Token name = consume(IDENTIFIER, "Expect " + kind + " name.");
+		consume(LEFT_PAREN, "Expect '(' after " + kind + " name.");
+		List<Token> parameters = new ArrayList<>();
+		
+		if(!check(RIGHT_PAREN)) {
+			do {
+				if (parameters.size() >= 255) {
+					error(peek(), "Can't have more than 255 parameters.");
+				}
+				
+				parameters.add(consume(IDENTIFIER, "Expect parameter name"));
+				
+			} while(match(COMMA));			
+		}
+		consume(RIGHT_PAREN, "Expect ')' after parameters.");
+		
+		consume(LEFT_BRACE, "Expect '{' before " + kind + " body.");
+		List<Stmt> body = block();
+		return new Stmt.Function(name, parameters, body);
 	}
 	
 	/**
@@ -195,6 +227,26 @@ public class Parser {
 		Stmt body = statement();
 		return new Stmt.While(condition, body);
 	}
+	
+	
+	/**
+	 * Method corresponding to returnStmt grammar rule
+	 * returnStmt     → "return" expression? ";" ;
+	 * @return A parsed return expression
+	 */
+	private Stmt returnStatement() {
+		Token keyword = previous();
+		Expr value = null;
+		
+		if(!check(SEMICOLON)) {
+			value = expression();
+			
+		}
+		
+		consume(SEMICOLON, "Expect ';' after return value.");
+		return new Stmt.Return(keyword, value);
+	}
+	
 	/**
 	 * Method representing ifStmt rule
 	 * ifStmt --> "if" "(" expression ")" statement ( "else" statement )? ;
@@ -239,27 +291,7 @@ public class Parser {
 		return assignment();
 	}
 	
-	private Stmt.Function function(String kind) {
-		Token name = consume(IDENTIFIER, "Expect " + kind + " name.");
-		consume(LEFT_PAREN, "Expect '(' after " + kind + " name.");
-		List<Token> parameters = new ArrayList<>();
-		
-		if(!check(RIGHT_PAREN)) {
-			do {
-				if (parameters.size() >= 255) {
-					error(peek(), "Can't have more than 255 parameters.");
-				}
-				
-				parameters.add(consume(IDENTIFIER, "Expect parameter name"));
-				
-			} while(match(COMMA));			
-		}
-		consume(RIGHT_PAREN, "Expect ')' after parameters.");
-		
-		consume(LEFT_BRACE, "Expect '{' before " + kind + " body.");
-		List<Stmt> body = block();
-		return new Stmt.Function(name, parameters, body);
-	}
+	
 	/**
 	 * Method corresponding to the assignment rule
 	 * assignment --> IDENTIFIER "=" assignment | logic_or ;

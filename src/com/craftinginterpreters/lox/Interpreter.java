@@ -5,7 +5,7 @@ import java.util.ArrayList;
 
 public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>{
 	
-	private Environment globals = new Environment(); // Fixed reference to outermost environment
+	final Environment globals = new Environment(); // Fixed reference to outermost environment
 	private Environment environment = globals;
 	
 	/**
@@ -61,8 +61,31 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>{
 		return object.toString();
 	}
 	
+	/**
+	 * Interprets return statements
+	 * If there is a return value it is evaluated, otherwise it is set to nil
+	 * That value is then wrapped in a custom exception class and thrown.
+	 */
+	@Override
+	public Void visitReturnStmt(Stmt.Return stmt) {
+		Object value = null;
+		if(stmt.value != null) value = evaluate(stmt.value);
+		
+		throw new Return(value);
+	}
 	
-	// Evaluate functions
+	/**
+	 * Interprets function declarations.
+	 * Convert function syntax node to runtime representation by wrapping it in a LoxFunction.
+	 * Creates a new binding in the current environment and stores a reference to the function there.
+	 */
+	@Override
+	public Void visitFunctionStmt(Stmt.Function stmt) {
+		LoxFunction function = new LoxFunction(stmt);
+		environment.define(stmt.name.lexeme, function);
+		return null;
+	}
+	
 	/**
 	 * Evaluates functions by casting them to LoxCallable, and calling the call() method on them
 	 * Checks if object is an instance of LoxCallable prior to cast, throws error if not
