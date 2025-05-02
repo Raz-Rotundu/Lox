@@ -78,9 +78,13 @@ public class Lox {
 		
 		if(hadError) return;
 		
+		// Resolver is only run if there are no parse errors
 		Resolver resolver = new Resolver(interpreter);
 		resolver.resolve(statements);
+		 
+		if(hadError) return;
 		
+		// Interpreter is run if resolver didnt have any errors
 		interpreter.interpret(statements);
 	}
 	
