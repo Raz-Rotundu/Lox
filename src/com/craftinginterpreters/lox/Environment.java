@@ -64,6 +64,38 @@ public class Environment {
 		values.put(name, value);
 	}
 	
-	
+	/**
+	 * Returns the value of the given variable in the map of given distance
+	 * It does not check for prescence of the variable at the given distance, because the resolver would have found it there first 
+	 * @param distance the distance of the target environment from the current one
+	 * @param name the name of the target variable
+	 * @return the value of the target variable
+	 */
+	Object getAt(int distance, String name) {
+		return ancestor(distance).values.get(name);
+	}
 
+	/**
+	 * Maps variable to value in the environment a certain distance away
+	 * @param distance the distance between this environment and the enclosing one
+	 * @param name the token containing the variable name
+	 * @param value the value of the variable
+	 */
+	void assignAt(int distance, Token name, Object value) {
+		ancestor(distance).values.put(name.lexeme, value);
+	}
+	/**
+	 * Walks a number of environments up the chain and returns the environment there
+	 * @param distance the numbe of enviromnments up the chain to go
+	 * @return the environment at the given distance from the current one
+	 */
+	Environment ancestor(int distance) {
+		Environment environment = this;
+		
+		for(int i = 0; i < distance; i++) {
+			environment = environment.enclosing;
+		}
+		
+		return environment;
+	}
 }
