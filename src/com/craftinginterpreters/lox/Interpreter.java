@@ -1,10 +1,12 @@
 package com.craftinginterpreters.lox;
 
 import java.util.List;
+import java.util.Map;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>{
-	
+	private final Map<Expr, Integer> locals = new HashMap<>();
 	final Environment globals = new Environment(); // Fixed reference to outermost environment
 	private Environment environment = globals;
 	
@@ -199,8 +201,26 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>{
 	 */
 	@Override
 	public Object visitVariableExpr(Expr.Variable expr) {
-		return environment.get(expr.name);
+		return lookUpVariable(expr.name, expr);
 	}
+	
+	/**
+	 * Looks up resolved distance in the map(locals), if not present, look it up dynamically in the global environment
+	 * @throws runtimeError if variable isn't defined
+	 * @param name the token containing the name of the variable
+	 * @param expr the expression in which the variable is involvec
+	 * @return resolved distance of the given variable
+	 */
+	private Object lookUpVariable(Token name, Expr expr) {
+		Integer distance = locals.get(expr);
+		
+		if(distance != null) {
+			return environment.getAt(distance, name.lexeme);
+		} else {
+			return globals.get(name);
+		}
+	}
+	
 	/**
 	 * Evaluate a literal
 	 * Pulls the runtime value of the literal tree node and returns it
@@ -241,6 +261,15 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>{
 	 */
 	private void execute(Stmt stmt) {
 		stmt.accept(this);
+	}
+	
+	/**
+	 * Map expression, and number of scoped between it and the scope in which its variables were defined
+	 * @param expr the expression to resolve
+	 * @param depth the 
+	 */
+	void resolve(Expr expr, int depth) {
+		locals.put(expr, depth);
 	}
 	
 	/**
