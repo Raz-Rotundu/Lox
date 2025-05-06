@@ -121,6 +121,21 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>{
 	}
 	
 	/**
+	 * Evaluate the expression whose property is being accessed, 
+	 * @exception RuntimeError thrown if object is not an instance of a Lox class
+	 * @param the GET expression to be evaluated
+	 */
+	@Override
+	public Void visitGetExpr(Expr.Get expr) {
+		Object object = evaluate(expr.object);
+		if((object instanceof LoxInstance)) {
+			return ((LoxInstance) object).get(expr.name);
+		}
+		
+		throw new RuntimeError(expr.name, "Only instances have properties.");
+	}
+	
+	/**
 	 * Evaluates while statements
 	 * Checks truthiness of while condition before executing the loop
 	 */
@@ -149,6 +164,24 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>{
 		return evaluate(expr.right);
 	}
 	
+	/**
+	 * Evaluates SET expressions on Lox class instances
+	 * Evaluates the value being set and stores it in the Lox instance
+	 * @exception throws RuntimeError if the object is not an instance of a Lox class
+	 * @return the result of the Set expression
+	 */
+	@Override
+	public Object visitSetExpr(Expr.Set expr) {
+		Object object = evaluate(expr.object);
+		
+		if(!(object instanceof LoxInstance)) {
+			throw new RuntimeError(expr.name, "Only instances have fields.");
+		}
+		
+		Object value = evaluate(expr.value);
+		((LoxInstance) object).set(expr.name, value);
+		return value;
+	}
 	/**
 	 * Evaluates if statement expression trees
 	 * If the condition is truthy, execute then branch, otherwise execute else branch if there is one

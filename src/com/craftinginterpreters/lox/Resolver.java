@@ -197,6 +197,17 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void>{
 	}
 	
 	/**
+	 * Visit get expressions
+	 * Properties are looked up dynamically, so we recurse into the expression to the left of the dot.
+	 * @param expr the get expression to be resolved
+	 */
+	@Override
+	public Void visitGetExpr(Expr.Get expr) {
+		resolve(expr.object);
+		return null;
+	}
+	
+	/**
 	 * Visit grouping (bracket) expressions
 	 * @param expr the bracket expression to be resolved
 	 */
@@ -225,6 +236,18 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void>{
 	public Void visitLogicalExpr(Expr.Logical expr) {
 		resolve(expr.left);
 		resolve(expr.right);
+		return null;
+	}
+	
+	/**
+	 * Visit set expressions
+	 * Property is dynamically resolved, so just recurse into two subexpressions
+	 * @param epr the SET expression to resolve
+	 */
+	@Override
+	public Void visitSetExpr(Expr.Set expr) {
+		resolve(expr.value);
+		resolve(expr.object);
 		return null;
 	}
 	

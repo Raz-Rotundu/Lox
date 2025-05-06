@@ -52,7 +52,7 @@ public class Parser {
 	 * ifStmt         → "if" "(" expression ")" statement ( "else" statement )? ;
 	 * block          → "{" declaration* "}" ;
 	 * expression     → assignment ;
-	 * assignment     → IDENTIFIER "=" assignment | logic_or;
+	 * assignment     → ( call "." )? IDENTIFIER "=" assignment | logic_or ;
 	 * equality       → comparison ( ( "!=" | "==" ) comparison )* ;
 	 * logic_or       → logic_and ( "or" logic_and )* ;
 	 * logic_and      → equality ( "and" equality )* ;
@@ -60,7 +60,7 @@ public class Parser {
      * term           → factor ( ( "-" | "+" ) factor )* ;
      * factor         → unary ( ( "/" | "*" ) unary )* ;
      * unary          → ( "!" | "-" ) unary | call ;
-     * call           → primary ( "(" arguments? ")" )* ;
+     * call           → primary ( "(" arguments? ")" | "." IDENTIFIER )* ;
      * arguments      → expression ( "," expression )* ;
      * primary        → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" ;
 	 */
@@ -69,7 +69,7 @@ public class Parser {
 	
 	/**
 	 * Method representing declarations rule
-	 * declaration -> varDecl | statement | funDecl;
+	 * declaration -> varDecl | statement | funDecl | classDecl;
 	 * @return Parsed declaration
 	 */
 	private Stmt declaration() {
@@ -315,7 +315,7 @@ public class Parser {
 	
 	/**
 	 * Method corresponding to the assignment rule
-	 * assignment --> IDENTIFIER "=" assignment | logic_or ;
+	 * assignment --> ( call "." )? IDENTIFIER "=" assignment | logic_or ;
 	 * Before an assignment expression node is created, check left hand side to see what kind of assignment target it is
 	 * Convert r-value expression node into l-value representation
 	 * @return Parsed equality reference
@@ -330,6 +330,9 @@ public class Parser {
 			if(expr instanceof Expr.Variable) {
 				Token name = ((Expr.Variable)expr).name;
 				return new Expr.Assign(name, value);
+			} else if(expr instanceof Expr.Get) {
+				Expr.Get get = (Expr.Get) expr;
+				return new Expr.Set(get.object, get.name, value);
 			}
 			
 			error(equals, "Invalid assignment target");
@@ -464,7 +467,8 @@ public class Parser {
 	
 	/**
 	 * Method representing call grammar rule
-	 *  call --> primary ( "(" arguments? ")" )* ;
+	 *  call --> primary ( "(" arguments? ")" | "." IDENTIFIER )* ;
+	 *  Go through tokens, building up a chain of calls until parentheses and dots are encountered
 	 *  Anytime an left parentheses is encountered, finish an expression call
 	 * @return A called expression or primary expression reference
 	 */
@@ -474,6 +478,9 @@ public class Parser {
 		while(true) {
 			if(match(LEFT_PAREN)) {
 				expr = finishCall(expr);
+			} else if(match(DOT)) {
+				Token name = consume(IDENTIFIER,"Expect property name after '.'.");
+				expr = new Expr.Get(expr, name);
 			} else {
 				break;
 			}
