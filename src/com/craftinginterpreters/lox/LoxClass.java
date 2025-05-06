@@ -30,6 +30,7 @@ public class LoxClass implements LoxCallable {
 	
 	/**
 	 * Calling a class creates a new LoxInstance for the called class and returns it
+	 * Checks for an "init" method. If found, bind and invoke like a normal method call
 	 * @param interpreter an interpreter
 	 * @param arguments the list of arguments to call object with (constructor params
 	 * @return a new instance of the called class
@@ -38,11 +39,22 @@ public class LoxClass implements LoxCallable {
 	public Object call(Interpreter interpreter, List<Object> arguments) {
 		LoxInstance instance = new LoxInstance(this);
 		
+		LoxFunction initializer = findMethod("init");
+		if(initializer != null) {
+			initializer.bind(instance).call(interpreter, arguments);
+		}
+		
 		return instance;
 	}
 	
+	/**
+	 * Function to determine the arity of the class (arity of constructor)
+	 * If there is an initializer, that method's arity determines how many arguments must be passed
+	 */
 	@Override
 	public int arity() {
-		return 0;
+		LoxFunction initializer = findMethod("init");
+		if(initializer == null) return 0;
+		return initializer.arity();
 	}
 }
