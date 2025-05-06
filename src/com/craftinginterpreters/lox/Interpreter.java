@@ -421,6 +421,28 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>{
 	}
 	
 	/**
+	 * Executes all statements within the block, passing environment as reference
+	 * @param stmt the block statement to be interpreted
+	 */
+	@Override
+	public Void visitBlockStmt(Stmt.Block stmt) {
+		executeBlock(stmt.statements, new Environment(environment));
+		return null;
+	}
+	
+	/**
+	 * Defines class and assigns it to current environment
+	 * @param stmt class definition statement
+	 */
+	@Override
+	public Void visitClassStmt(Stmt.Class stmt) {
+		environment.define(stmt.name.lexeme, null);
+		LoxClass klass = new LoxClass(stmt.name.lexeme);
+		environment.assign(stmt.name, klass);
+		return null;
+	}
+	
+	/**
 	 * Evaluates equality based on Lox's notion of equality
 	 * Handles null parameters so that we don't throw nullPointerExceptions from calling equals on null
 	 * @param a the first object to be compared
@@ -434,12 +456,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>{
 		return a.equals(b);
 	}
 	
-	// Semantics
-	@Override
-	public Void visitBlockStmt(Stmt.Block stmt) {
-		executeBlock(stmt.statements, new Environment(environment));
-		return null;
-	}
+
 
 	// Executes list of statements in the context of a given environment
 	void executeBlock(List<Stmt> statements, Environment environment) {

@@ -40,6 +40,17 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void>{
 	}
 	
 	/**
+	 * Declare and define a class using its name for now
+	 * @param A class declaration statement
+	 */
+	@Override
+	public Void visitClassStmt(Stmt.Class stmt) {
+		declare(stmt.name);
+		define(stmt.name);
+		return null;
+		
+	}
+	/**
 	 * Resolves a declaration by adding it to the innermost scope's map
 	 * @param stmt variable declaration statement
 	 */

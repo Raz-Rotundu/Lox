@@ -39,7 +39,8 @@ public class Parser {
 	// LOX GRAMMAR RULES
 	/*
 	 * program        → declaration* EOF ;
-	 * declaration    → varDecl | statement | funDecl;
+	 * declaration    → varDecl | statement | funDecl | classDecl;
+	 * classDecl      → "class" IDENTIFIER "{" function* "}" ;
 	 * varDecl        → "var" IDENTIFIER ( "=" expression )? ";" ;
 	 * statement      → exprStmt | printStmt | block | ifStmt | whileStmt | forStmt | returnStmt;
 	 * funDecl        → "fun" function ;
@@ -73,6 +74,7 @@ public class Parser {
 	 */
 	private Stmt declaration() {
 		try {
+			if(match(CLASS)) return classDeclaration();
 			if(match(FUN)) return function("function");
 			if(match(VAR)) return varDeclaration();
 			
@@ -84,12 +86,31 @@ public class Parser {
 	}
 	
 	/**
+	 * Function corresponding to the classDecl rule
+	 * classDecl --> "class" IDENTIFIER "{" function* "}" ;
+	 * After checking for name and left brace, go through body and parse method declarations until the end
+	 * @return A parsed class declaration statement
+	 */
+	private Stmt classDeclaration() {
+		Token name = consume(IDENTIFIER, "Expect class name.");
+		consume(LEFT_BRACE, "Expect '{' before class body.");
+		
+		
+		List<Stmt.Function> methods = new ArrayList<>();
+		while(!check(RIGHT_BRACE) && !isAtEnd()) {
+			methods.add(function("method"));
+		}
+		
+		consume(RIGHT_BRACE, "Expect '}' after class body.");
+		return new Stmt.Class(name, methods);
+	}
+	/**
 	 * Function corresponding to varDecl rule
 	 * varDecl        → "var" IDENTIFIER ( "=" expression )? ";" ;
 	 * Consumes an identifier token, then based on the next token, 
 	 * determines if this is a variable declaration or a variable expression.
 	 * Declarations means the initializer expression will be parsed
-	 * @return
+	 * @return a parsed variable declaration statement
 	 */
 	private Stmt varDeclaration() {
 		Token name = consume(IDENTIFIER, "Expect variable name.");
