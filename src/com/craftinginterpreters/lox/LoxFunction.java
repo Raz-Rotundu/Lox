@@ -16,6 +16,17 @@ public class LoxFunction implements LoxCallable {
 		this.declaration = declaration;
 	}
 	
+	/**
+	 * Declare "this" as a variable and binds it to the generated instance, the instance which the method is being called from
+	 * @param instance the instance from which the method is being called from
+	 * @return Lox function with "this" closure
+	 */
+	LoxFunction bind(LoxInstance instance) {
+		Environment environment = new Environment(closure);
+		environment.define("this", instance);
+		return new LoxFunction(declaration, environment);
+	}
+	
 	@Override
 	public String toString() {
 		return "<fn " + declaration.name.lexeme + ">";

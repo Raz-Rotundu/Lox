@@ -182,6 +182,17 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>{
 		((LoxInstance) object).set(expr.name, value);
 		return value;
 	}
+	
+	/**
+	 * Evaluate "this" expressions is the same way as variables
+	 * @param expr "this" expression to be evaluated
+	 * @return result of lookUpVariable
+	 */
+	@Override
+	public Object visitThisExpr(Expr.This expr) {
+		return lookUpVariable(expr.keyword, expr);
+		
+	}
 	/**
 	 * Evaluates if statement expression trees
 	 * If the condition is truthy, execute then branch, otherwise execute else branch if there is one
