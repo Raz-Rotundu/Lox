@@ -40,7 +40,7 @@ public class Parser {
 	/*
 	 * program        → declaration* EOF ;
 	 * declaration    → varDecl | statement | funDecl | classDecl;
-	 * classDecl      → "class" IDENTIFIER "{" function* "}" ;
+	 * classDecl      → "class" IDENTIFIER ( "<" IDENTIFIER )? "{" function* "}" ;
 	 * varDecl        → "var" IDENTIFIER ( "=" expression )? ";" ;
 	 * statement      → exprStmt | printStmt | block | ifStmt | whileStmt | forStmt | returnStmt;
 	 * funDecl        → "fun" function ;
@@ -62,7 +62,7 @@ public class Parser {
      * unary          → ( "!" | "-" ) unary | call ;
      * call           → primary ( "(" arguments? ")" | "." IDENTIFIER )* ;
      * arguments      → expression ( "," expression )* ;
-     * primary        → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" ;
+     * primary        → "true" | "false" | "nil" | "this" | NUMBER | STRING | IDENTIFIER | "(" expression ")"| "super" "." IDENTIFIER ;
 	 */
 	
 	// Methods corresponding to Lox grammar rules
@@ -87,12 +87,19 @@ public class Parser {
 	
 	/**
 	 * Function corresponding to the classDecl rule
-	 * classDecl --> "class" IDENTIFIER "{" function* "}" ;
+	 * classDecl --> "class" IDENTIFIER ( "<" IDENTIFIER )? "{" function* "}" ;
 	 * After checking for name and left brace, go through body and parse method declarations until the end
 	 * @return A parsed class declaration statement
 	 */
 	private Stmt classDeclaration() {
 		Token name = consume(IDENTIFIER, "Expect class name.");
+		
+		Expr.Variable superclass = null;
+		if(match(LESS)) {
+			consume(IDENTIFIER, "Expect superclass name.");
+			superclass = new Expr.Variable(previous());
+		}
+		
 		consume(LEFT_BRACE, "Expect '{' before class body.");
 		
 		
@@ -102,7 +109,7 @@ public class Parser {
 		}
 		
 		consume(RIGHT_BRACE, "Expect '}' after class body.");
-		return new Stmt.Class(name, methods);
+		return new Stmt.Class(name, superclass, methods);
 	}
 	/**
 	 * Function corresponding to varDecl rule
@@ -515,9 +522,9 @@ public class Parser {
 	
 	/**
 	 * Method representing primary operations rule
-	 * primary --> NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" ;
+	 * primary --> "true" | "false" | "nil" | "this" | NUMBER | STRING | IDENTIFIER | "(" expression ")"| "super" "." IDENTIFIER ;
 	 * Check to see which literal it is, return literal expression, or if there is a bracket, a grouping expression
-	 * @return a new literal or grouping expression
+	 * @return a new literal, super, variable, or grouping expression
 	 */
 	private Expr primary() {
 		if(match(FALSE)) return new Expr.Literal(false);
@@ -526,6 +533,13 @@ public class Parser {
 		
 		if(match(NUMBER, STRING)) {
 			return new Expr.Literal(previous().literal);
+		}
+		
+		if(match(SUPER)) {
+			Token keyword = previous();
+			consume(DOT, "Expect '.' after 'super'.");
+			Token method = consume(IDENTIFIER, "Expect superclass method name.");
+			return new Expr.Super(keyword, method);
 		}
 		
 		if(match(LEFT_PAREN)) {
