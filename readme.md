@@ -50,7 +50,7 @@ Lox only supports double precision floating point integers. This is to be able t
 12.34; // A decimal number.
 ```
 
-####**Strings**
+#### **Strings**
 
 Lox supports strings in the same way as most other languages: A sequence of chars enclosed by the " " quotation marks.
 
@@ -72,7 +72,7 @@ c = nil; // This variable has no value
 
 Lox supports 4 types of expressions
 
-#### ** Arithmetic **
+#### **Arithmetic**
 Lox supports binary and unary arithmetic expressions using the classical math operators
 	
 ```
@@ -85,7 +85,7 @@ divide / me;
 All of these operators work on NUMBERS ONLY, and will throw an error if anything else is passed to them.
 The exception to this is the plus (+) operator, which can also be used to concatenate strings
 
-#### ** Comparison/Equality **
+#### **Comparison/Equality**
 
 Lox supports comparison operations using the classic comparison operators
 
@@ -108,10 +108,10 @@ Lox does not support implicit conversions. As such, any two values can be checke
 
 ```
 
-#### ** Logical Operators **
+#### **Logical Operators**
 Lox supports 3 logical operators
 
-- ** NOT **
+- **NOT**
 The NOT operator is a prefix which flips the boolean value of whatever it is prefixing
 
 ```
@@ -120,7 +120,7 @@ The NOT operator is a prefix which flips the boolean value of whatever it is pre
 
 ```
 
-- ** AND **
+- **AND**
 The AND operator determines if two boolean values are both true
 
 ```
@@ -129,7 +129,7 @@ true and true;  // true.
 
 ```
 
-- ** OR **
+- **OR**
 The OR operator determines if at least one of two boolean values are true
 
 ```
@@ -139,7 +139,7 @@ true or false;  // true.
 
 Both AND and OR operations short circuit;
 
-#### ** Precedence and Grouping**
+#### **Precedence and Grouping**
 Lox implements the usual C precedence and associativity order for operations (BEDMAS). Brackets can be used to group expressions.
 
 ```
