@@ -9,6 +9,11 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 
+/**
+ * Lox -- The main class and entry point into the program. Responsible for scanning, parsing, resolving and interpreting statements
+ * Reponsible for handling errors and printing them to stderr.
+ * The program can be run in two modes: reading a lox file, or through a REPL interactive prompt
+ */
 public class Lox {
 	private static final Interpreter interpreter = new Interpreter();
 	static boolean hadError = false;
