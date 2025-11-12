@@ -12,13 +12,8 @@ A UNIX shell
 ## Installation
 1. Download the repository to the chosen directory
 2. Run the following command:
-``` mvn clean compile 
-TODO
-```
+``` mvn clean compile ```
 3. Program is now installed, execute with java -jar ...
-
-## Usage
-TODO
 
 ## The Lox Language
 
